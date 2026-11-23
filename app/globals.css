@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --zen-bg: #f5f8f6;
+    --zen-card: rgba(255, 255, 255, 0.88);
+    --primary: #006948;
+    --primary-container: #00855d;
+    --primary-fixed: #85f8c4;
+    --sage-50: #f2f7f4;
+    --sage-100: #e2efe7;
+    --sage-500: #2d6a4f;
+    --sage-900: #132a22;
+    --warm-amber: #d97706;
+    --soft-blue: #0284c7;
+    --ink-primary: #0f1f19;
+    --ink-secondary: #4a5d54;
+    --ink-muted: #8a9e94;
+    --border-ambient: rgba(0, 105, 72, 0.08);
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background-color: var(--zen-bg);
+    color: var(--ink-primary);
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@font-face {
+  font-family: 'Outfit';
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+}
+
+/* Ambient Soft Card with frosted glass aesthetic */
+.bento-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 36px -6px rgba(19, 42, 34, 0.035),
+    0 2px 10px -2px rgba(19, 42, 34, 0.02);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  box-shadow: 0 22px 48px -10px rgba(0, 105, 72, 0.07),
+    0 4px 16px -2px rgba(19, 42, 34, 0.03);
+  transform: translateY(-2px);
+  border-color: rgba(133, 248, 196, 0.5);
+}
+
+/* Smooth Breathing Status Dot */
+@keyframes subtlePulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.15);
+  }
+}
+
+.breathing-dot {
+  animation: subtlePulse 2.4s ease-in-out infinite;
+}
+
+/* Smooth Fan Rotation */
+@keyframes spinClean {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-fan {
+  animation: spinClean 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Clean Gauge transition */
+.radial-circle {
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+    stroke 0.6s ease;
+}
+
+/* Aura glow backdrop blobs */
+.zen-aura-1 {
+  position: fixed;
+  top: -10%;
+  right: 5%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(
+    circle,
+    rgba(133, 248, 196, 0.16) 0%,
+    rgba(245, 248, 246, 0) 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.zen-aura-2 {
+  position: fixed;
+  bottom: 5%;
+  left: 10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(
+    circle,
+    rgba(201, 230, 255, 0.18) 0%,
+    rgba(245, 248, 246, 0) 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
 }
