@@ -320,14 +320,17 @@ void sendSensorDataHttp(const char* triggerReason, unsigned int snapVisitor, uns
   }
   
   HTTPClient http;
-  http.setTimeout(6000);  // ✅ Safe timeout (< INTERVAL_POST_MS)
+  http.setTimeout(10000);  // ✅ Increased: 6s → 10s
+  http.setConnectTimeout(5000);  // ✅ Add connect timeout
   
   if (!http.begin(API_ENDPOINT)) {
-    Serial.println("[HTTP-Core0] ✗ Failed to init URL");
+    Serial.printf("[HTTP-Core0] ✗ Failed to init URL: %s\n", API_ENDPOINT);
     return;
   }
   
   http.addHeader("Content-Type", "application/json");
+  Serial.printf("[HTTP-Core0] Sending %d bytes to %s\n", written, API_ENDPOINT);
+  
   int httpResponseCode = http.POST(jsonPayload);
   
   Serial.printf("[HTTP-Core0] %s → Code: %d\n", triggerReason, httpResponseCode);
@@ -338,6 +341,8 @@ void sendSensorDataHttp(const char* triggerReason, unsigned int snapVisitor, uns
     lastSentHumidity = snapHumid;
     lastSentAmmoniaPpm = snapAmmonia;
     Serial.println("[HTTP-Core0] ✓ Data sent");
+  } else if (httpResponseCode == -1) {
+    Serial.println("[HTTP-Core0] ❌ Connection timeout/error (-1) - check WiFi");
   }
   
   http.end();
@@ -355,8 +360,10 @@ void networkTask(void* pvParameters) {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   
   Serial.printf("[NETWORK-Core0] Connecting to %s...\n", WIFI_SSID);
+  Serial.printf("[NETWORK-Core0] API endpoint: %s\n", API_ENDPOINT);
   
   bool wasConnected = false;
+  int connectionAttempts = 0;
   
   for (;;) {
     unsigned long now = millis();
