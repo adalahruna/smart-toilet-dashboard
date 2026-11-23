@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 
+// ✅ Force dynamic - no caching for sensor data
+export const dynamic = 'force-dynamic';
+
 // POST /api/sensor - Endpoint untuk ESP32 mengirim data
 export async function POST(request: NextRequest) {
   try {
