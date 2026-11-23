@@ -57,9 +57,9 @@ const int BUZZER_CHANNEL = 0;
 
 const unsigned long INTERVAL_TOF_MS = 50;
 const unsigned long INTERVAL_ENV_MS = 2000;
-const unsigned long INTERVAL_POST_MS = 10000;  // ✅ Increased from 8s
+const unsigned long INTERVAL_POST_MS = 3000;  // ✅ Faster: 3 seconds instead of 10
 const unsigned long INTERVAL_WIFI_MS = 5000;
-const unsigned long MIN_POST_GAP_MS = 2000;
+const unsigned long MIN_POST_GAP_MS = 1000;   // ✅ Faster: 1 second instead of 2
 
 const int DOOR_THRESHOLD_MM = 800;
 const unsigned long FSM_TIMEOUT_MS = 3000;

@@ -10,6 +10,7 @@ export function useRealtimeSensor(roomId: string = 'toilet_a') {
   useEffect(() => {
     let channel: RealtimeChannel;
     let isSubscribed = false;
+    let pollInterval: NodeJS.Timeout;
 
     // Fetch initial data
     const fetchInitialData = async () => {
@@ -100,11 +101,37 @@ export function useRealtimeSensor(roomId: string = 'toilet_a') {
 
     setupRealtime();
 
+    // ✅ FALLBACK: Polling every 2 seconds as backup if realtime fails
+    pollInterval = setInterval(async () => {
+      if (!isSubscribed) {
+        console.log('[useRealtimeSensor] ⏱️ Polling fallback (realtime not subscribed)');
+        try {
+          const { data, error } = await supabase
+            .from('sensor_readings')
+            .select('*')
+            .eq('room_id', String(roomId))
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (data && (!sensorData || data.id !== sensorData.id)) {
+            console.log('[useRealtimeSensor] ⏱️ Polling update:', data);
+            setSensorData(data);
+          }
+        } catch (err) {
+          console.error('[useRealtimeSensor] ❌ Polling error:', err);
+        }
+      }
+    }, 2000);
+
     // Cleanup
     return () => {
       console.log('[useRealtimeSensor] 🧹 Cleaning up subscription for room:', roomId);
       if (channel) {
         supabase.removeChannel(channel);
+      }
+      if (pollInterval) {
+        clearInterval(pollInterval);
       }
     };
   }, [roomId]);
