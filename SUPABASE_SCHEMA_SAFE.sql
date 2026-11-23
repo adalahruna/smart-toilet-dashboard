@@ -68,8 +68,9 @@ VALUES ('toilet_01', 88, false)
 ON CONFLICT (room_id) DO NOTHING;
 
 -- 7. Enable Realtime (IMPORTANT!)
-ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS sensor_readings;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS toilet_status;
+-- Note: If table already in publication, it's safe to ignore error
+ALTER PUBLICATION supabase_realtime ADD TABLE sensor_readings;
+ALTER PUBLICATION supabase_realtime ADD TABLE toilet_status;
 
 -- 8. Enable Row Level Security (RLS)
 ALTER TABLE sensor_readings ENABLE ROW LEVEL SECURITY;
