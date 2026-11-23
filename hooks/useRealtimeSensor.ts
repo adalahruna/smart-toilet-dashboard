@@ -9,11 +9,12 @@ export function useRealtimeSensor(roomId: string = 'toilet_01') {
 
   useEffect(() => {
     let channel: RealtimeChannel;
+    let isSubscribed = false;
 
     // Fetch initial data
     const fetchInitialData = async () => {
       try {
-        console.log('Fetching initial sensor data for room:', roomId);
+        console.log('[useRealtimeSensor] Fetching initial data for room:', roomId);
         const { data, error } = await supabase
           .from('sensor_readings')
           .select('*')
@@ -22,23 +23,23 @@ export function useRealtimeSensor(roomId: string = 'toilet_01') {
           .limit(1)
           .maybeSingle();
 
-        console.log('Query response - data:', data, 'error:', error);
+        console.log('[useRealtimeSensor] Initial fetch - data:', data, 'error:', error);
         
         if (error) {
-          console.error('Supabase error details:', error.code, error.message, error.details);
+          console.error('[useRealtimeSensor] ❌ Supabase error:', error.code, error.message);
           throw new Error(`${error.code}: ${error.message}`);
         }
         
         if (data) {
-          console.log('Initial data fetched successfully:', data);
+          console.log('[useRealtimeSensor] ✅ Initial data loaded:', data);
           setSensorData(data);
         } else {
-          console.warn('No data found for room_id:', roomId);
+          console.warn('[useRealtimeSensor] ⚠️ No data found for room_id:', roomId);
         }
         setLoading(false);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        console.error('Error fetching initial data:', errorMsg);
+        console.error('[useRealtimeSensor] ❌ Error fetching initial data:', errorMsg);
         setError(errorMsg);
         setLoading(false);
       }
@@ -46,31 +47,65 @@ export function useRealtimeSensor(roomId: string = 'toilet_01') {
 
     fetchInitialData();
 
-    // Subscribe to realtime updates
-    console.log('Setting up realtime subscription for room:', roomId);
-    channel = supabase
-      .channel(`sensor_readings:${roomId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'sensor_readings',
-          filter: `room_id=eq.${roomId}`,
-        },
-        (payload) => {
-          console.log('Realtime update received:', payload.new);
-          setSensorData(payload.new as SensorReading);
-        }
-      )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-      });
+    // Setup realtime subscription
+    const setupRealtime = async () => {
+      try {
+        console.log('[useRealtimeSensor] 🔌 Setting up realtime subscription for room:', roomId);
+        
+        channel = supabase
+          .channel(`sensor_readings:${roomId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'sensor_readings',
+              filter: `room_id=eq.${roomId}`,
+            },
+            (payload) => {
+              console.log('[useRealtimeSensor] 📡 Realtime INSERT event received:', payload.new);
+              setSensorData(payload.new as SensorReading);
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'sensor_readings',
+              filter: `room_id=eq.${roomId}`,
+            },
+            (payload) => {
+              console.log('[useRealtimeSensor] 📡 Realtime UPDATE event received:', payload.new);
+              setSensorData(payload.new as SensorReading);
+            }
+          )
+          .subscribe((status) => {
+            console.log('[useRealtimeSensor] 📡 Subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+              isSubscribed = true;
+              console.log('[useRealtimeSensor] ✅ Successfully subscribed to realtime updates');
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('[useRealtimeSensor] ❌ Channel error');
+              isSubscribed = false;
+            } else if (status === 'TIMED_OUT') {
+              console.error('[useRealtimeSensor] ❌ Subscription timed out');
+              isSubscribed = false;
+            }
+          });
+      } catch (err) {
+        console.error('[useRealtimeSensor] ❌ Error setting up realtime:', err);
+      }
+    };
+
+    setupRealtime();
 
     // Cleanup
     return () => {
-      console.log('Cleaning up subscription for room:', roomId);
-      supabase.removeChannel(channel);
+      console.log('[useRealtimeSensor] 🧹 Cleaning up subscription for room:', roomId);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [roomId]);
 
