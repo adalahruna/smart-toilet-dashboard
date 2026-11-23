@@ -237,6 +237,9 @@ void updateFootTrafficFSM() {
         updateLCDDisplay();
         Serial.printf("[TRAFFIC-Core1] ✓ KELUAR (Dalam→Luar) | Total: %u\n", newCount);
         
+        // ✅ FORCE: Mark lastSentVisitorCount different to trigger POST immediately
+        lastSentVisitorCount = 999999;  // Will never match visitorCount, forces significantChange
+        
       } else if (now - stateTimestamp > FSM_TIMEOUT_MS) {
         currentDoorState = STATE_IDLE;
       }
