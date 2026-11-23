@@ -510,7 +510,7 @@ void updateFootTrafficFSM() {
       // Waiting for inner trigger (completing entry sequence)
       if (innerTriggered) {
         // Both triggered in correct order → ENTRY COMPLETE
-        visitorCount++;
+        // ✅ Set occupied = true, but DO NOT increment counter yet
         activeOccupancy = 1;
         currentDoorState = STATE_WAIT_CLEAR;
         stateTimestamp = now;
@@ -520,7 +520,7 @@ void updateFootTrafficFSM() {
         buzzerBeepEndTime = now + 250;  // 250ms beep
         
         updateLCDDisplay();
-        Serial.printf("[TRAFFIC] ✓ Person ENTERED | Total: %d | Occupied: YES\n", visitorCount);
+        Serial.printf("[TRAFFIC] ✓ Person ENTERED | Occupied: YES (waiting for exit to count)\n");
         
       } else if (now - stateTimestamp > FSM_TIMEOUT_MS) {
         // Timeout without completing sequence → false trigger
@@ -532,7 +532,9 @@ void updateFootTrafficFSM() {
       // Waiting for outer trigger (completing exit sequence)
       if (outerTriggered) {
         // Both triggered in correct order → EXIT COMPLETE
+        // ✅ Set occupied = false AND increment counter on EXIT
         activeOccupancy = 0;
+        visitorCount++;  // Only increment when person EXITS
         currentDoorState = STATE_WAIT_CLEAR;
         stateTimestamp = now;
         
@@ -541,7 +543,7 @@ void updateFootTrafficFSM() {
         buzzerBeepEndTime = now + 250;  // 250ms beep
         
         updateLCDDisplay();
-        Serial.println("[TRAFFIC] ✓ Person EXITED | Occupied: NO");
+        Serial.printf("[TRAFFIC] ✓ Person EXITED | Total Count: %d | Occupied: NO\n", visitorCount);
         
       } else if (now - stateTimestamp > FSM_TIMEOUT_MS) {
         // Timeout without completing sequence → false trigger

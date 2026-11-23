@@ -13,20 +13,33 @@ export function useRealtimeSensor(roomId: string = 'toilet_01') {
     // Fetch initial data
     const fetchInitialData = async () => {
       try {
+        console.log('Fetching initial sensor data for room:', roomId);
         const { data, error } = await supabase
           .from('sensor_readings')
           .select('*')
-          .eq('room_id', roomId)
+          .eq('room_id', String(roomId))
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
-        if (error) throw error;
-        if (data) setSensorData(data);
+        console.log('Query response - data:', data, 'error:', error);
+        
+        if (error) {
+          console.error('Supabase error details:', error.code, error.message, error.details);
+          throw new Error(`${error.code}: ${error.message}`);
+        }
+        
+        if (data) {
+          console.log('Initial data fetched successfully:', data);
+          setSensorData(data);
+        } else {
+          console.warn('No data found for room_id:', roomId);
+        }
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching initial data:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error('Error fetching initial data:', errorMsg);
+        setError(errorMsg);
         setLoading(false);
       }
     };
@@ -34,6 +47,7 @@ export function useRealtimeSensor(roomId: string = 'toilet_01') {
     fetchInitialData();
 
     // Subscribe to realtime updates
+    console.log('Setting up realtime subscription for room:', roomId);
     channel = supabase
       .channel(`sensor_readings:${roomId}`)
       .on(
@@ -45,7 +59,7 @@ export function useRealtimeSensor(roomId: string = 'toilet_01') {
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          console.log('Realtime update received:', payload);
+          console.log('Realtime update received:', payload.new);
           setSensorData(payload.new as SensorReading);
         }
       )
@@ -55,6 +69,7 @@ export function useRealtimeSensor(roomId: string = 'toilet_01') {
 
     // Cleanup
     return () => {
+      console.log('Cleaning up subscription for room:', roomId);
       supabase.removeChannel(channel);
     };
   }, [roomId]);

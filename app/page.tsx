@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRealtimeSensor } from '@/hooks/useRealtimeSensor';
 
 export default function Dashboard() {
-  const { sensorData: realtimeData, loading, error } = useRealtimeSensor('toilet_01');
+  const { sensorData: realtimeData, loading, error } = useRealtimeSensor('toilet_a');
   
   const [sensorData, setSensorData] = useState({
     occupied: true,
@@ -23,20 +23,43 @@ export default function Dashboard() {
   // Update from realtime data
   useEffect(() => {
     if (realtimeData) {
-      setSensorData({
+      console.log('=== DASHBOARD UPDATE ===');
+      console.log('Realtime data received:', realtimeData);
+      
+      const newSensorData = {
         occupied: realtimeData.occupied || false,
         visitorCount: realtimeData.visitor_count || 0,
         temperature: realtimeData.temperature || 25,
         humidity: realtimeData.humidity || 60,
         ammoniaPPM: realtimeData.ammonia_ppm || 0,
         duration: 0,
+      };
+      console.log('New sensor data:', newSensorData);
+      setSensorData(newSensorData);
+      
+      // Calculate cleanliness score using formula: (gas 60% + humidity 40%)
+      const ammoniaPPM = realtimeData.ammonia_ppm || 0;
+      const humidity = realtimeData.humidity || 60;
+      
+      const gasScore = Math.max(100 - (ammoniaPPM * 2), 0);
+      const optimalHumidity = 50;
+      const humidityDeviation = Math.abs(humidity - optimalHumidity);
+      const humidityScore = Math.max(100 - (humidityDeviation * 1.5), 0);
+      
+      const weightedScore = (gasScore * 0.6) + (humidityScore * 0.4);
+      const finalScore = Math.round(Math.max(Math.min(weightedScore, 100), 0));
+      
+      console.log('📊 Cleanliness Calculation:', {
+        ammoniaPPM,
+        humidity,
+        gasScore: Math.round(gasScore),
+        humidityScore: Math.round(humidityScore),
+        weightedScore: Math.round(weightedScore),
+        finalScore
       });
       
-      // Calculate cleanliness score
-      const gasScore = Math.min(realtimeData.ammonia_ppm / 2, 100);
-      const humidityScore = Math.min(realtimeData.humidity, 100);
-      const score = Math.max(100 - ((gasScore * 0.6 + humidityScore * 0.4) / 100) * 100, 0);
-      setCleanlinessScore(Math.round(score));
+      setCleanlinessScore(finalScore);
+      console.log('=== END UPDATE ===\n');
     }
   }, [realtimeData]);
 
@@ -72,12 +95,26 @@ export default function Dashboard() {
     }, 700);
   };
 
+  const [trafficHistory, setTrafficHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  // Update traffic history with new visitor count
+  useEffect(() => {
+    if (sensorData.visitorCount > 0) {
+      setTrafficHistory(prev => {
+        const updated = [...prev];
+        updated.pop(); // Remove last (oldest)
+        updated.unshift(sensorData.visitorCount); // Add new at beginning
+        return updated;
+      });
+    }
+  }, [sensorData.visitorCount]);
+
   const trafficData = {
     labels: ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"],
-    counts: [10, 14, 19, 16, 28, 21, 12, 15, 9, 6],
-    heights: [35, 48, 65, 55, 94, 72, 40, 52, 30, 22],
-    peakIndex: 4,
-    currentIndex: 2
+    counts: trafficHistory,
+    heights: trafficHistory.map(count => Math.max((count / Math.max(...trafficHistory, 1)) * 100, 5)), // Normalize to 5-100 height
+    peakIndex: trafficHistory.indexOf(Math.max(...trafficHistory, 0)),
+    currentIndex: 0 // Always show latest as current
   };
 
   const strokeDashoffset = 251.2 - (251.2 * cleanlinessScore) / 100;
@@ -213,18 +250,26 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 4 Stats Cards */}
-          <div className="grid grid-cols-4 gap-6">
+          {/* 5 Stats Cards */}
+          <div className="grid grid-cols-5 gap-6">
             <div className="bento-card p-6 rounded-[28px]">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#8a9e94]">Status Okupansi</span>
-                <div className="w-9 h-9 rounded-2xl bg-[#FFFBEB] border border-[#FDE68A]/50 flex items-center justify-center text-[#d97706]">
-                  <span className="material-symbols-outlined text-[20px]">meeting_room</span>
+                <div className={`w-9 h-9 rounded-2xl border-[#FDE68A]/50 flex items-center justify-center ${
+                  sensorData.occupied 
+                    ? 'bg-[#FFFBEB] text-[#d97706]' 
+                    : 'bg-blue-50 text-blue-500 border-blue-200/50'
+                }`}>
+                  <span className="material-symbols-outlined text-[20px]">
+                    {sensorData.occupied ? 'meeting_room' : 'door_open'}
+                  </span>
                 </div>
               </div>
               <div className="mb-4">
                 <div className="flex items-center gap-2.5 mb-1">
-                  <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-[28px] font-semibold tracking-tight text-[#d97706]">Terisi</span>
+                  <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-[28px] font-semibold tracking-tight text-[#d97706]">
+                    {sensorData.occupied ? 'Terisi' : 'Kosong'}
+                  </span>
                   <span className="w-2.5 h-2.5 rounded-full bg-[#d97706] breathing-dot"></span>
                 </div>
                 <p className="text-xs text-[#8a9e94]">Sinkronisasi otomatis dengan LCD luar</p>
@@ -309,6 +354,49 @@ export default function Dashboard() {
                 <span className="text-xs font-bold text-teal-800 shrink-0">Optimal</span>
               </div>
             </div>
+
+            {/* Odor / Ammonia PPM Card */}
+            <div className="bento-card p-6 rounded-[28px]">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#8a9e94]">Status Bau</span>
+                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center ${
+                  sensorData.ammoniaPPM < 20 
+                    ? 'bg-[#ECFDF5] text-[#006948] border border-emerald-200/50'
+                    : sensorData.ammoniaPPM < 50
+                    ? 'bg-[#FFFBEB] text-[#d97706] border border-[#FDE68A]/50'
+                    : 'bg-rose-50 text-rose-600 border border-rose-200/50'
+                }`}>
+                  <span className="material-symbols-outlined text-[20px]">
+                    {sensorData.ammoniaPPM < 20 ? 'favorite' : sensorData.ammoniaPPM < 50 ? 'warning' : 'dangerous'}
+                  </span>
+                </div>
+              </div>
+              <div className="mb-4">
+                <div className="flex items-baseline gap-1.5 mb-1">
+                  <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-3xl font-bold text-[#0F1F19]">{sensorData.ammoniaPPM}</span>
+                  <span className="text-sm font-semibold text-[#8a9e94]">PPM</span>
+                </div>
+                <p className="text-xs text-[#8a9e94]">
+                  {sensorData.ammoniaPPM < 20 
+                    ? '✓ Bau Normal' 
+                    : sensorData.ammoniaPPM < 50
+                    ? '⚠ Perhatian'
+                    : '⚠ Kritis'}
+                </p>
+              </div>
+              <div className="pt-2 border-t border-[#132a22]/5 flex items-center justify-between">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg ${
+                  sensorData.ammoniaPPM < 20
+                    ? 'bg-[#ECFDF5] text-[#006948]'
+                    : sensorData.ammoniaPPM < 50
+                    ? 'bg-[#FFFBEB] text-[#92400E]'
+                    : 'bg-rose-100 text-rose-700'
+                }`}>
+                  {sensorData.ammoniaPPM < 20 ? 'Aman' : sensorData.ammoniaPPM < 50 ? 'Hati-hati' : 'Berbahaya'}
+                </span>
+                <span className="text-xs text-[#8a9e94]">Ambang: 50 PPM</span>
+              </div>
+            </div>
           </div>
 
           {/* Chart & Gauge Row */}
@@ -341,9 +429,13 @@ export default function Dashboard() {
                   <div className="w-6 h-6 rounded-lg bg-[#FDE68A] text-[#92400E] flex items-center justify-center">
                     <span className="material-symbols-outlined text-[16px]">bolt</span>
                   </div>
-                  <span>Periode Puncak: <strong className="font-bold text-[#92400E]">12:00 - 13:00 WIB</strong> (28 Kunjungan)</span>
+                  <span>
+                    Periode Puncak: <strong className="font-bold text-[#92400E]">{trafficData.labels[trafficData.peakIndex]}</strong> ({trafficData.counts[trafficData.peakIndex]} Kunjungan)
+                  </span>
                 </div>
-                <span className="text-[11px] font-semibold text-[#92400E] bg-white/80 px-3 py-0.5 rounded-full">Ventilasi Otomatis Berjalan</span>
+                <span className="text-[11px] font-semibold text-[#92400E] bg-white/80 px-3 py-0.5 rounded-full">
+                  Total: {trafficData.counts.reduce((a, b) => a + b, 0)} Tamu
+                </span>
               </div>
 
               <div className="relative h-64 flex items-end justify-between gap-3 px-3">
@@ -402,7 +494,7 @@ export default function Dashboard() {
                     <p className="text-xs text-[#8a9e94]">Kalkulasi durasi & kualitas udara</p>
                   </div>
                   <span className="px-3 py-1 rounded-full bg-[#ECFDF5] border border-emerald-300 text-xs font-bold text-[#006948]">
-                    {isSanitized ? 'Maksimal 99%' : 'Sangat Bersih'}
+                    {isSanitized ? 'Maksimal 99%' : cleanlinessScore >= 80 ? 'Sangat Bersih' : cleanlinessScore >= 60 ? 'Bersih' : 'Perlu Dibersihkan'}
                   </span>
                 </div>
 
@@ -459,18 +551,24 @@ export default function Dashboard() {
 
               <button
                 onClick={markSanitized}
-                disabled={isSanitized}
-                className={`w-full flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-2xl font-semibold text-sm shadow-[0_10px_28px_-4px_rgba(0,105,72,0.28)] hover:shadow-[0_20px_40px_-8px_rgba(0,105,72,0.08)] active:scale-95 ${
-                  isSanitized
-                    ? 'bg-[#132a22] text-white'
-                    : 'bg-gradient-to-r from-[#006948] to-[#00855d] hover:from-[#00855d] hover:to-[#006948] text-white'
+                disabled={isSanitized || cleanlinessScore >= 90}
+                className={`w-full flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-2xl font-semibold text-sm shadow-[0_10px_28px_-4px_rgba(0,105,72,0.28)] hover:shadow-[0_20px_40px_-8px_rgba(0,105,72,0.08)] active:scale-95 transition-all ${
+                  isSanitized || cleanlinessScore >= 90
+                    ? 'bg-[#132a22] text-white opacity-75 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-[#006948] to-[#00855d] hover:from-[#00855d] hover:to-[#006948] text-white hover:scale-105'
                 }`}
                 style={{ fontFamily: 'Outfit, sans-serif' }}
               >
                 <span className="material-symbols-outlined text-[20px]">
-                  {isSanitized ? 'check_circle' : 'cleaning_services'}
+                  {isSanitized || cleanlinessScore >= 90 ? 'check_circle' : 'cleaning_services'}
                 </span>
-                <span>{isSanitized ? 'Tersanitasi Sempurna' : 'Tandai Telah Dibersihkan'}</span>
+                <span>
+                  {isSanitized 
+                    ? 'Tersanitasi Sempurna' 
+                    : cleanlinessScore >= 90 
+                    ? 'Kebersihan Optimal' 
+                    : 'Tandai Telah Dibersihkan'}
+                </span>
               </button>
             </div>
           </div>
