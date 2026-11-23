@@ -11,6 +11,8 @@ export async function POST(request: NextRequest) {
 
     // Validasi data yang diterima
     const { room_id, visitor_count, humidity, temperature, ammonia_ppm, occupied } = body;
+    
+    console.log('[API] Received payload:', JSON.stringify(body, null, 2));
 
     if (!room_id || visitor_count === undefined || !humidity || !temperature || ammonia_ppm === undefined) {
       return NextResponse.json(
@@ -33,6 +35,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert data ke Supabase
+    const occupiedValue = occupied === true || occupied === 'true' || occupied === 1;
+    console.log('[API] Inserting to Supabase:', {
+      room_id,
+      visitor_count: parseInt(visitor_count),
+      humidity: parseFloat(humidity),
+      temperature: parseFloat(temperature),
+      ammonia_ppm: parseFloat(ammonia_ppm),
+      occupied: occupiedValue,
+    });
+    
     const { data, error } = await supabase
       .from('sensor_readings')
       .insert({
@@ -41,15 +53,17 @@ export async function POST(request: NextRequest) {
         humidity: parseFloat(humidity),
         temperature: parseFloat(temperature),
         ammonia_ppm: parseFloat(ammonia_ppm),
-        occupied: occupied === true || occupied === 'true' || occupied === 1,
+        occupied: occupiedValue,
       })
       .select()
       .single();
 
     if (error) {
-      console.error('Supabase insert error:', error);
+      console.error('[API] ❌ Supabase insert error:', error);
       return NextResponse.json({ error: 'Database error', details: error.message }, { status: 500 });
     }
+    
+    console.log('[API] ✅ Insert successful:', data);
 
     return NextResponse.json({
       success: true,
@@ -70,7 +84,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const roomId = searchParams.get('room_id') || 'toilet_01';
+    const roomId = searchParams.get('room_id') || 'toilet_a';
     const limit = parseInt(searchParams.get('limit') || '10');
 
     const { data, error } = await supabase
