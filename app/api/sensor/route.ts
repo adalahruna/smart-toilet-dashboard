@@ -10,9 +10,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validasi data yang diterima
-    const { room_id, visitor_count, humidity, temperature, ammonia_ppm, occupied } = body;
-    
-    console.log('[API] Received payload:', JSON.stringify(body, null, 2));
+    const { room_id, visitor_count, humidity, temperature, ammonia_ppm } = body;
+
+    console.log('[API POST] Received:', { room_id, visitor_count, humidity, temperature, ammonia_ppm });
 
     if (!room_id || visitor_count === undefined || !humidity || !temperature || ammonia_ppm === undefined) {
       return NextResponse.json(
@@ -21,30 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validasi range nilai
-    if (humidity < 0 || humidity > 100) {
-      return NextResponse.json({ error: 'Humidity must be between 0-100' }, { status: 400 });
-    }
-
-    if (temperature < 0 || temperature > 50) {
-      return NextResponse.json({ error: 'Temperature must be between 0-50' }, { status: 400 });
-    }
-
-    if (ammonia_ppm < 0) {
-      return NextResponse.json({ error: 'Ammonia PPM cannot be negative' }, { status: 400 });
-    }
-
     // Insert data ke Supabase
-    const occupiedValue = occupied === true || occupied === 'true' || occupied === 1;
-    console.log('[API] Inserting to Supabase:', {
-      room_id,
-      visitor_count: parseInt(visitor_count),
-      humidity: parseFloat(humidity),
-      temperature: parseFloat(temperature),
-      ammonia_ppm: parseFloat(ammonia_ppm),
-      occupied: occupiedValue,
-    });
-    
     const { data, error } = await supabase
       .from('sensor_readings')
       .insert({
@@ -53,18 +30,16 @@ export async function POST(request: NextRequest) {
         humidity: parseFloat(humidity),
         temperature: parseFloat(temperature),
         ammonia_ppm: parseFloat(ammonia_ppm),
-        occupied: occupiedValue,
       })
       .select()
       .single();
 
     if (error) {
-      console.error('[API] ❌ Supabase insert error:', error);
+      console.error('[API POST] ❌ Error:', error.message);
       return NextResponse.json({ error: 'Database error', details: error.message }, { status: 500 });
     }
-    
-    console.log('[API] ✅ Insert successful:', data);
 
+    console.log('[API POST] ✅ Success:', data);
     return NextResponse.json({
       success: true,
       message: 'Data received and stored',
@@ -72,7 +47,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('API error:', error);
+    console.error('[API POST] Exception:', error);
     return NextResponse.json(
       { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -84,8 +59,10 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const roomId = searchParams.get('room_id') || 'toilet_a';
+    const roomId = searchParams.get('room_id') || 'toilet_01';
     const limit = parseInt(searchParams.get('limit') || '10');
+
+    console.log('[API GET] Query:', { roomId, limit });
 
     const { data, error } = await supabase
       .from('sensor_readings')
@@ -95,9 +72,11 @@ export async function GET(request: NextRequest) {
       .limit(limit);
 
     if (error) {
+      console.error('[API GET] ❌ Error:', error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    console.log('[API GET] ✅ Found:', data?.length || 0, 'records');
     return NextResponse.json({
       success: true,
       room_id: roomId,
@@ -105,6 +84,7 @@ export async function GET(request: NextRequest) {
       data,
     });
   } catch (error) {
+    console.error('[API GET] Exception:', error);
     return NextResponse.json(
       { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
