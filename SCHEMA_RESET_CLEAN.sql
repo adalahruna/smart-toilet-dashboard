@@ -46,7 +46,7 @@ ON toilet_status FOR SELECT USING (true);
 
 -- ✅ STEP 6: Insert default data
 INSERT INTO toilet_status (room_id, cleanliness_score)
-VALUES ('toilet_01', 85)
+VALUES ('toilet_a', 85)
 ON CONFLICT (room_id) DO NOTHING;
 
 -- ✅ STEP 7: Enable Realtime

@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const roomId = searchParams.get('room_id') || 'toilet_01';
+    const roomId = searchParams.get('room_id') || 'toilet_a';
     const limit = parseInt(searchParams.get('limit') || '10');
 
     console.log('[API GET] Query:', { roomId, limit });

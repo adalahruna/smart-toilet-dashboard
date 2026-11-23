@@ -36,7 +36,7 @@
 const char* WIFI_SSID = "runoy";
 const char* WIFI_PASSWORD = "87654321";
 const char* API_ENDPOINT = "http://192.168.137.1:3000/api/sensor";
-const char* ROOM_ID = "toilet_01";
+const char* ROOM_ID = "toilet_a";
 
 // ============================================
 // 2. PIN DEFINITIONS

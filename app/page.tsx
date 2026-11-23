@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRealtimeSensor } from '@/hooks/useRealtimeSensor';
 
 export default function Dashboard() {
-  const { sensorData: realtimeData, loading, error } = useRealtimeSensor('toilet_01');
+  const { sensorData: realtimeData, loading, error } = useRealtimeSensor('toilet_a');
   
   const [sensorData, setSensorData] = useState({
     occupied: true,
