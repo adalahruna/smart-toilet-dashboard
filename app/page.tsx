@@ -1,21 +1,44 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRealtimeSensor } from '@/hooks/useRealtimeSensor';
 
 export default function Dashboard() {
+  const { sensorData: realtimeData, loading, error } = useRealtimeSensor('toilet_01');
+  
   const [sensorData, setSensorData] = useState({
     occupied: true,
-    visitorCount: 142,
-    temperature: 24.5,
-    humidity: 58,
+    visitorCount: 42,
+    temperature: 24.3,
+    humidity: 58.5,
     ammoniaPPM: 18,
-    duration: 252,
+    duration: 0,
   });
 
   const [cleanlinessScore, setCleanlinessScore] = useState(88);
   const [isSanitized, setIsSanitized] = useState(false);
   const [currentTime, setCurrentTime] = useState('10:48 WIB');
   const [toast, setToast] = useState({ show: false, title: '', message: '' });
+
+  // Update from realtime data
+  useEffect(() => {
+    if (realtimeData) {
+      setSensorData({
+        occupied: realtimeData.occupied || false,
+        visitorCount: realtimeData.visitor_count || 0,
+        temperature: realtimeData.temperature || 25,
+        humidity: realtimeData.humidity || 60,
+        ammoniaPPM: realtimeData.ammonia_ppm || 0,
+        duration: 0,
+      });
+      
+      // Calculate cleanliness score
+      const gasScore = Math.min(realtimeData.ammonia_ppm / 2, 100);
+      const humidityScore = Math.min(realtimeData.humidity, 100);
+      const score = Math.max(100 - ((gasScore * 0.6 + humidityScore * 0.4) / 100) * 100, 0);
+      setCleanlinessScore(Math.round(score));
+    }
+  }, [realtimeData]);
 
   useEffect(() => {
     const interval = setInterval(() => {
