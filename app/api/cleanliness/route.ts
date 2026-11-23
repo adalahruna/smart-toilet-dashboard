@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 
-// ✅ Force dynamic - no caching for cleanliness data
-export const dynamic = 'force-dynamic';
-
 // POST /api/cleanliness - Update cleanliness score dan sanitasi status
 export async function POST(request: NextRequest) {
   try {

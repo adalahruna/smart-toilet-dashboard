@@ -1,8 +1,5 @@
 'use client';
 
-// ✅ Force dynamic rendering - no caching!
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect } from 'react';
 import { useRealtimeSensor } from '@/hooks/useRealtimeSensor';
 

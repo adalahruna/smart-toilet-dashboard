@@ -2,8 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // ✅ DISABLED BOTH: Conflicts with real-time functionality
+  // cacheComponents: true,
+  // partialPrefetching: true,
+  
   turbopack: {
     rules: {
       "*.css": {
