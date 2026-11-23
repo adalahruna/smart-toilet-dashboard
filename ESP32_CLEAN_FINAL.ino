@@ -309,8 +309,9 @@ void sendSensorDataHttp(const char* triggerReason, unsigned int snapVisitor, uns
   // ✅ SAFE: Larger buffer (256 → 512)
   char jsonPayload[512];
   int written = snprintf(jsonPayload, sizeof(jsonPayload),
-           "{\"room_id\":\"%s\",\"visitor_count\":%u,\"humidity\":%.1f,\"temperature\":%.1f,\"ammonia_ppm\":%.2f}",
-           ROOM_ID, snapVisitor, snapHumid, snapTemp, snapAmmonia);
+           "{\"room_id\":\"%s\",\"visitor_count\":%u,\"humidity\":%.1f,\"temperature\":%.1f,\"ammonia_ppm\":%.2f,\"occupied\":%s}",
+           ROOM_ID, snapVisitor, snapHumid, snapTemp, snapAmmonia,
+           (snapOcc > 0 ? "true" : "false"));
   
   // ✅ Check for truncation
   if (written >= (int)sizeof(jsonPayload) - 1) {

@@ -15,6 +15,7 @@ CREATE TABLE sensor_readings (
   humidity DECIMAL(5,2) NOT NULL,
   temperature DECIMAL(5,2) NOT NULL,
   ammonia_ppm DECIMAL(6,2) NOT NULL,
+  occupied BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

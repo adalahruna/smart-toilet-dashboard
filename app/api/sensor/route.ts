@@ -10,9 +10,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validasi data yang diterima
-    const { room_id, visitor_count, humidity, temperature, ammonia_ppm } = body;
+    const { room_id, visitor_count, humidity, temperature, ammonia_ppm, occupied } = body;
 
-    console.log('[API POST] Received:', { room_id, visitor_count, humidity, temperature, ammonia_ppm });
+    console.log('[API POST] Received:', { room_id, visitor_count, humidity, temperature, ammonia_ppm, occupied });
 
     if (!room_id || visitor_count === undefined || !humidity || !temperature || ammonia_ppm === undefined) {
       return NextResponse.json(
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
         humidity: parseFloat(humidity),
         temperature: parseFloat(temperature),
         ammonia_ppm: parseFloat(ammonia_ppm),
+        occupied: occupied === true || occupied === 'true' || occupied === 1 || occupied > 0,
       })
       .select()
       .single();
