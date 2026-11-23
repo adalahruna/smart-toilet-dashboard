@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase, SensorReading } from '@/lib/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
-export function useRealtimeSensor(roomId: string = 'toilet_a') {
+export function useRealtimeSensor(roomId: string = 'toilet_01') {
   const [sensorData, setSensorData] = useState<SensorReading | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
