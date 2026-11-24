@@ -74,27 +74,25 @@ export default function Dashboard() {
     }
   }, [realtimeData]);
 
+  const showToast = (title: string, message: string) => {
+    setToast({ show: true, title, message });
+    setTimeout(() => setToast({ show: false, title: '', message: '' }), 4000);
+  };
+
   // ✅ Monitor cleanliness score dan trigger alert jika < 60% (REALTIME)
   useEffect(() => {
     if (cleanlinessScore < 60 && !isSanitized) {
-      // Jika alert belum ditampilkan atau sudah > 5 menit, tampilkan lagi
       const now = Date.now();
       if (!cleaningAlert.dismissedTime || (now - cleaningAlert.dismissedTime > 5 * 60 * 1000)) {
         setCleaningAlert({ show: true, dismissedTime: null });
         console.log('🔴 [REALTIME ALERT] Cleanliness score < 60%! Alert notifikasi ditampilkan langsung.');
-        // Juga tampilkan toast
-        setToast({ 
-          show: true, 
-          title: '⚠️ ALERT KEBERSIHAN', 
-          message: 'Cleanliness turun ke ' + cleanlinessScore + '%. Kamar mandi perlu dibersihkan!' 
-        });
-        setTimeout(() => setToast({ show: false, title: '', message: '' }), 4000);
+        showToast('⚠️ ALERT KEBERSIHAN', 'Cleanliness turun ke ' + cleanlinessScore + '%. Kamar mandi perlu dibersihkan!');
       }
     } else if (cleanlinessScore >= 80 && cleaningAlert.show) {
       setCleaningAlert({ show: false, dismissedTime: Date.now() });
       console.log('✅ [ALERT DISMISSED] Cleanliness score improved to >= 80%');
     }
-  }, [cleanlinessScore, isSanitized, cleaningAlert.dismissedTime]);  // ✅ Fixed dependencies
+  }, [cleanlinessScore, isSanitized, cleaningAlert.dismissedTime]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -109,11 +107,6 @@ export default function Dashboard() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
-
-  const showToast = (title: string, message: string) => {
-    setToast({ show: true, title, message });
-    setTimeout(() => setToast({ show: false, title: '', message: '' }), 3000);
   };
 
   const markSanitized = () => {
@@ -142,16 +135,24 @@ export default function Dashboard() {
     }
   }, [sensorData.visitorCount]);
 
-  // ✅ Generate dynamic 10-hour time labels (current time - 9 hours)
+  // ✅ Generate dynamic 10-hour time labels (current time - 9 hours) with correct timezone
   const getTrafficLabels = () => {
     const labels = [];
     const now = new Date();
     
+    // Get local timezone offset in milliseconds
+    const offset = now.getTimezoneOffset() * 60 * 1000;
+    
     for (let i = 9; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+      // Create time considering local timezone
+      const timeMs = now.getTime() - (i * 60 * 60 * 1000);
+      const time = new Date(timeMs);
+      
+      // Get hours in local timezone (not UTC)
       const hour = String(time.getHours()).padStart(2, '0');
       labels.push(hour + ':00');
     }
+    console.log('[Traffic] Labels:', labels, 'Current hour:', new Date().getHours());
     return labels;
   };
 
