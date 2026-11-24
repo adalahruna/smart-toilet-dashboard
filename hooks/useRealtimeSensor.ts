@@ -54,7 +54,12 @@ export function useRealtimeSensor(roomId: string = 'toilet_a') {
         console.log('[useRealtimeSensor] 🔌 Setting up realtime subscription for room:', roomId);
         
         channel = supabase
-          .channel(`sensor_readings:${roomId}`)
+          .channel(`sensor_readings:${roomId}`, { 
+            config: { 
+              broadcast: { self: true },
+              presence: { key: roomId }
+            }
+          })
           .on(
             'postgres_changes',
             {
@@ -64,8 +69,9 @@ export function useRealtimeSensor(roomId: string = 'toilet_a') {
               filter: `room_id=eq.${roomId}`,
             },
             (payload) => {
-              console.log('[useRealtimeSensor] 📡 Realtime INSERT event received:', payload.new);
+              console.log('[useRealtimeSensor] 🚀 INSERT event (realtime):', payload.new);
               setSensorData(payload.new as SensorReading);
+              isSubscribed = true;
             }
           )
           .on(
@@ -77,34 +83,35 @@ export function useRealtimeSensor(roomId: string = 'toilet_a') {
               filter: `room_id=eq.${roomId}`,
             },
             (payload) => {
-              console.log('[useRealtimeSensor] 📡 Realtime UPDATE event received:', payload.new);
+              console.log('[useRealtimeSensor] 🚀 UPDATE event (realtime):', payload.new);
               setSensorData(payload.new as SensorReading);
+              isSubscribed = true;
             }
           )
           .subscribe((status) => {
             console.log('[useRealtimeSensor] 📡 Subscription status:', status);
             if (status === 'SUBSCRIBED') {
               isSubscribed = true;
-              console.log('[useRealtimeSensor] ✅ Successfully subscribed to realtime updates');
+              console.log('[useRealtimeSensor] ✅ Realtime connected - polling disabled');
             } else if (status === 'CHANNEL_ERROR') {
-              console.error('[useRealtimeSensor] ❌ Channel error');
+              console.error('[useRealtimeSensor] ⚠️ Channel error - falling back to polling');
               isSubscribed = false;
             } else if (status === 'TIMED_OUT') {
-              console.error('[useRealtimeSensor] ❌ Subscription timed out');
+              console.error('[useRealtimeSensor] ⚠️ Realtime timed out - falling back to polling');
               isSubscribed = false;
             }
           });
       } catch (err) {
         console.error('[useRealtimeSensor] ❌ Error setting up realtime:', err);
+        isSubscribed = false;
       }
     };
 
     setupRealtime();
 
-    // ✅ FALLBACK: Polling every 2 seconds as backup if realtime fails
+    // ✅ FALLBACK: Polling every 500ms (fast!) if realtime fails
     pollInterval = setInterval(async () => {
       if (!isSubscribed) {
-        console.log('[useRealtimeSensor] ⏱️ Polling fallback (realtime not subscribed)');
         try {
           const { data, error } = await supabase
             .from('sensor_readings')
@@ -115,14 +122,14 @@ export function useRealtimeSensor(roomId: string = 'toilet_a') {
             .maybeSingle();
 
           if (data && (!sensorData || data.id !== sensorData.id)) {
-            console.log('[useRealtimeSensor] ⏱️ Polling update:', data);
+            console.log('[useRealtimeSensor] ⏱️ Polling update (500ms):', data);
             setSensorData(data);
           }
         } catch (err) {
-          console.error('[useRealtimeSensor] ❌ Polling error:', err);
+          // Silent fail
         }
       }
-    }, 2000);
+    }, 500);  // ✅ Fast: 500ms instead of 2000ms
 
     // Cleanup
     return () => {
