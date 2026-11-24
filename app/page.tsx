@@ -74,20 +74,22 @@ export default function Dashboard() {
     }
   }, [realtimeData]);
 
-  // ✅ NEW: Monitor cleanliness score dan trigger alert jika < 60%
+  // ✅ Monitor cleanliness score dan trigger alert jika < 60% (REALTIME)
   useEffect(() => {
     if (cleanlinessScore < 60 && !isSanitized) {
-      // Check jika alert sudah ditampilkan dalam 5 menit terakhir
+      // Jika alert belum ditampilkan atau sudah > 5 menit, tampilkan lagi
       const now = Date.now();
       if (!cleaningAlert.dismissedTime || (now - cleaningAlert.dismissedTime > 5 * 60 * 1000)) {
         setCleaningAlert({ show: true, dismissedTime: null });
-        console.log('🔴 [ALERT] Cleanliness score < 60%! Alert notifikasi ditampilkan.');
+        console.log('🔴 [REALTIME ALERT] Cleanliness score < 60%! Alert notifikasi ditampilkan langsung.');
+        // Juga tampilkan toast
+        showToast('⚠️ ALERT KEBERSIHAN', 'Cleanliness turun ke ' + cleanlinessScore + '%. Kamar mandi perlu dibersihkan!');
       }
     } else if (cleanlinessScore >= 80 && cleaningAlert.show) {
       setCleaningAlert({ show: false, dismissedTime: Date.now() });
       console.log('✅ [ALERT DISMISSED] Cleanliness score improved to >= 80%');
     }
-  }, [cleanlinessScore, isSanitized]);
+  }, [cleanlinessScore, isSanitized]);  // ✅ Trigger immediately on cleanliness change
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -135,12 +137,25 @@ export default function Dashboard() {
     }
   }, [sensorData.visitorCount]);
 
+  // ✅ Generate dynamic 10-hour time labels (current time - 9 hours)
+  const getTrafficLabels = () => {
+    const labels = [];
+    const now = new Date();
+    
+    for (let i = 9; i >= 0; i--) {
+      const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+      const hour = String(time.getHours()).padStart(2, '0');
+      labels.push(hour + ':00');
+    }
+    return labels;
+  };
+
   const trafficData = {
-    labels: ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"],
+    labels: getTrafficLabels(),
     counts: trafficHistory,
-    heights: trafficHistory.map(count => Math.max((count / Math.max(...trafficHistory, 1)) * 100, 5)), // Normalize to 5-100 height
+    heights: trafficHistory.map(count => Math.max((count / Math.max(...trafficHistory, 1)) * 100, 5)),
     peakIndex: trafficHistory.indexOf(Math.max(...trafficHistory, 0)),
-    currentIndex: 0 // Always show latest as current
+    currentIndex: 9  // ✅ Always latest (rightmost)
   };
 
   const strokeDashoffset = 251.2 - (251.2 * cleanlinessScore) / 100;
