@@ -7,15 +7,15 @@ export default function Dashboard() {
   const { sensorData: realtimeData, loading, error } = useRealtimeSensor('toilet_a');
   
   const [sensorData, setSensorData] = useState({
-    occupied: true,
-    visitorCount: 42,
-    temperature: 24.3,
-    humidity: 58.5,
-    ammoniaPPM: 18,
+    occupied: false,
+    visitorCount: 0,
+    temperature: 0,
+    humidity: 0,
+    ammoniaPPM: 0,
     duration: 0,
   });
 
-  const [cleanlinessScore, setCleanlinessScore] = useState(88);
+  const [cleanlinessScore, setCleanlinessScore] = useState(0);
   const [isSanitized, setIsSanitized] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => 
     new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
@@ -121,7 +121,7 @@ export default function Dashboard() {
     }, 700);
   };
 
-  const [trafficHistory, setTrafficHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  const [trafficHistory, setTrafficHistory] = useState<number[]>(Array(10).fill(0));
 
   // Update traffic history with new visitor count
   useEffect(() => {
