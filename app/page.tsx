@@ -83,13 +83,18 @@ export default function Dashboard() {
         setCleaningAlert({ show: true, dismissedTime: null });
         console.log('🔴 [REALTIME ALERT] Cleanliness score < 60%! Alert notifikasi ditampilkan langsung.');
         // Juga tampilkan toast
-        showToast('⚠️ ALERT KEBERSIHAN', 'Cleanliness turun ke ' + cleanlinessScore + '%. Kamar mandi perlu dibersihkan!');
+        setToast({ 
+          show: true, 
+          title: '⚠️ ALERT KEBERSIHAN', 
+          message: 'Cleanliness turun ke ' + cleanlinessScore + '%. Kamar mandi perlu dibersihkan!' 
+        });
+        setTimeout(() => setToast({ show: false, title: '', message: '' }), 4000);
       }
     } else if (cleanlinessScore >= 80 && cleaningAlert.show) {
       setCleaningAlert({ show: false, dismissedTime: Date.now() });
       console.log('✅ [ALERT DISMISSED] Cleanliness score improved to >= 80%');
     }
-  }, [cleanlinessScore, isSanitized]);  // ✅ Trigger immediately on cleanliness change
+  }, [cleanlinessScore, isSanitized, cleaningAlert.dismissedTime]);  // ✅ Fixed dependencies
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -726,55 +731,48 @@ export default function Dashboard() {
                       <div className="w-2 h-2 rounded-full bg-[#006948] mt-1.5 ring-4 ring-emerald-200" />
                       <div>
                         <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-xs font-bold text-[#132a22] block">Sanitasi Manual Sukses</span>
-                        <span className="text-[11px] text-emerald-800">Budi Santoso memverifikasi cubicle higienis</span>
+                        <span className="text-[11px] text-emerald-800">Ruangan terverifikasi higienis sekarang</span>
                       </div>
                     </div>
                     <span className="text-[11px] font-mono text-emerald-800 font-bold px-2 py-0.5 rounded-md bg-white">Baru saja</span>
                   </div>
                 )}
 
-                <div className="flex items-start justify-between p-2.5 rounded-2xl hover:bg-[#f2f7f4]/70 group">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-[#006948] mt-1.5 ring-4 ring-emerald-100" />
-                    <div>
-                      <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-xs font-bold text-[#0F1F19] block">Okupansi: Pintu tertutup & sensor gerak aktif</span>
-                      <span className="text-[11px] text-[#8a9e94]">Status cubicle otomatis beralih ke "TERISI"</span>
+                {sensorData.occupied && (
+                  <div className="flex items-start justify-between p-2.5 rounded-2xl hover:bg-[#f2f7f4]/70 group">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-[#d97706] mt-1.5 ring-4 ring-amber-100" />
+                      <div>
+                        <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-xs font-bold text-[#0F1F19] block">Status: Ruangan Terisi</span>
+                        <span className="text-[11px] text-[#8a9e94]">Sensor pintu aktif, durasi penggunaan: {formatDuration(sensorData.duration)}</span>
+                      </div>
                     </div>
+                    <span className="text-[11px] font-mono text-[#8a9e94] px-2 py-0.5 rounded-md bg-black/[0.02]">{currentTime}</span>
                   </div>
-                  <span className="text-[11px] font-mono text-[#8a9e94] px-2 py-0.5 rounded-md bg-black/[0.02]">10:45 WIB</span>
-                </div>
+                )}
+
+                {sensorData.ammoniaPPM > 20 && (
+                  <div className="flex items-start justify-between p-2.5 rounded-2xl hover:bg-[#f2f7f4]/70 group">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-[#d97706] mt-1.5 ring-4 ring-amber-100" />
+                      <div>
+                        <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-xs font-bold text-[#0F1F19] block">Kualitas Udara Berubah</span>
+                        <span className="text-[11px] text-[#8a9e94]">PPM naik ke {sensorData.ammoniaPPM.toFixed(2)} PPM, monitoring berlanjut</span>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-mono text-[#8a9e94] px-2 py-0.5 rounded-md bg-black/[0.02]">{currentTime}</span>
+                  </div>
+                )}
 
                 <div className="flex items-start justify-between p-2.5 rounded-2xl hover:bg-[#f2f7f4]/70 group">
                   <div className="flex items-start gap-3">
                     <div className="w-2 h-2 rounded-full bg-[#0284c7] mt-1.5 ring-4 ring-sky-100" />
                     <div>
-                      <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-xs font-bold text-[#0F1F19] block">Pintu Terbuka — Sesi Selesai</span>
-                      <span className="text-[11px] text-[#8a9e94]">Durasi 3m 40d. Kunjungan baru tersimpan di memori.</span>
+                      <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-xs font-bold text-[#0F1F19] block">Total Pengunjung Hari Ini</span>
+                      <span className="text-[11px] text-[#8a9e94]">Tercatat {sensorData.visitorCount} orang telah menggunakan kamar mandi</span>
                     </div>
                   </div>
-                  <span className="text-[11px] font-mono text-[#8a9e94] px-2 py-0.5 rounded-md bg-black/[0.02]">10:32 WIB</span>
-                </div>
-
-                <div className="flex items-start justify-between p-2.5 rounded-2xl hover:bg-[#f2f7f4]/70 group">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-[#d97706] mt-1.5 ring-4 ring-amber-100" />
-                    <div>
-                      <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-xs font-bold text-[#0F1F19] block">Perubahan Gas Terdeteksi</span>
-                      <span className="text-[11px] text-[#8a9e94]">PPM naik ke 32 PPM, monitoring berlanjut</span>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-mono text-[#8a9e94] px-2 py-0.5 rounded-md bg-black/[0.02]">10:15 WIB</span>
-                </div>
-
-                <div className="flex items-start justify-between p-2.5 rounded-2xl hover:bg-[#f2f7f4]/70 group">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-[#006948] mt-1.5 ring-4 ring-emerald-100" />
-                    <div>
-                      <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-xs font-bold text-[#0F1F19] block">Sanitasi Rutin Terverifikasi</span>
-                      <span className="text-[11px] text-[#8a9e94]">Petugas Rahmat melakukan disinfeksi (#CLN-04)</span>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-mono text-[#8a9e94] px-2 py-0.5 rounded-md bg-black/[0.02]">09:00 WIB</span>
+                  <span className="text-[11px] font-mono text-[#8a9e94] px-2 py-0.5 rounded-md bg-black/[0.02]">Aktif</span>
                 </div>
               </div>
 
