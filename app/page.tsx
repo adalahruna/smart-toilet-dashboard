@@ -79,20 +79,21 @@ export default function Dashboard() {
     setTimeout(() => setToast({ show: false, title: '', message: '' }), 4000);
   };
 
-  // ✅ Monitor cleanliness score dan trigger alert jika < 60% (REALTIME)
+  // ✅ Monitor cleanliness score dan trigger alert jika < 60% (REALTIME) - MUST FIRE EVERY TIME SCORE CHANGES
   useEffect(() => {
-    if (cleanlinessScore < 60 && !isSanitized) {
-      const now = Date.now();
-      if (!cleaningAlert.dismissedTime || (now - cleaningAlert.dismissedTime > 5 * 60 * 1000)) {
-        setCleaningAlert({ show: true, dismissedTime: null });
-        console.log('🔴 [REALTIME ALERT] Cleanliness score < 60%! Alert notifikasi ditampilkan langsung.');
-        showToast('⚠️ ALERT KEBERSIHAN', 'Cleanliness turun ke ' + cleanlinessScore + '%. Kamar mandi perlu dibersihkan!');
-      }
+    console.log('🔍 [Alert Check] Score:', cleanlinessScore, 'Sanitized:', isSanitized, 'AlertShow:', cleaningAlert.show);
+    
+    if (cleanlinessScore < 60 && !isSanitized && !cleaningAlert.show) {
+      // Score dropped below threshold - SHOW ALERT
+      setCleaningAlert({ show: true, dismissedTime: null });
+      console.log('🔴 [ALERT TRIGGERED] Cleanliness score < 60%! Score:', cleanlinessScore);
+      showToast('⚠️ ALERT KEBERSIHAN', 'Cleanliness turun ke ' + cleanlinessScore + '%. Kamar mandi perlu dibersihkan!');
     } else if (cleanlinessScore >= 80 && cleaningAlert.show) {
+      // Score recovered - DISMISS ALERT
       setCleaningAlert({ show: false, dismissedTime: Date.now() });
       console.log('✅ [ALERT DISMISSED] Cleanliness score improved to >= 80%');
     }
-  }, [cleanlinessScore, isSanitized, cleaningAlert.dismissedTime]);
+  }, [cleanlinessScore, isSanitized]);  // ✅ ONLY depend on actual values, not dismissedTime
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -122,18 +123,38 @@ export default function Dashboard() {
   };
 
   const [trafficHistory, setTrafficHistory] = useState<number[]>(Array(10).fill(0));
+  const [lastVisitorCount, setLastVisitorCount] = useState(0);
+  const [lastHourReset, setLastHourReset] = useState(new Date().getHours());
 
-  // Update traffic history with new visitor count
+  // Update traffic history when visitor count CHANGES (new guest)
   useEffect(() => {
-    if (sensorData.visitorCount > 0) {
+    if (sensorData.visitorCount > lastVisitorCount) {
+      // New visitor detected - increment current hour
       setTrafficHistory(prev => {
         const updated = [...prev];
-        updated.pop(); // Remove last (oldest)
-        updated.unshift(sensorData.visitorCount); // Add new at beginning
+        updated[9]++; // Increment current hour (rightmost)
         return updated;
       });
+      setLastVisitorCount(sensorData.visitorCount);
+      console.log('📈 [Traffic] New visitor! Total:', sensorData.visitorCount, 'Current hour count:', trafficHistory[9] + 1);
     }
-  }, [sensorData.visitorCount]);
+  }, [sensorData.visitorCount, lastVisitorCount]);
+
+  // ✅ Shift traffic data every hour (move current hour to history, reset for new hour)
+  useEffect(() => {
+    const checkHourChange = setInterval(() => {
+      const currentHour = new Date().getHours();
+      if (currentHour !== lastHourReset) {
+        console.log('⏰ [Traffic] Hour changed from', lastHourReset, 'to', currentHour, '- shifting traffic history');
+        setTrafficHistory(prev => {
+          const updated = [...prev.slice(1), 0]; // Shift left, add 0 at end for new hour
+          return updated;
+        });
+        setLastHourReset(currentHour);
+      }
+    }, 60000); // Check every minute
+    return () => clearInterval(checkHourChange);
+  }, [lastHourReset]);
 
   // ✅ Generate dynamic 10-hour time labels (current time - 9 hours) with correct timezone
   const getTrafficLabels = () => {
