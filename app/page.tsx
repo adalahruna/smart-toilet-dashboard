@@ -21,6 +21,7 @@ export default function Dashboard() {
     new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
   );
   const [toast, setToast] = useState({ show: false, title: '', message: '' });
+  const [cleaningAlert, setCleaningAlert] = useState({ show: false, dismissedTime: null as number | null });  // ✅ NEW
 
   // ✅ Auto-sync jam setiap detik
   useEffect(() => {
@@ -72,6 +73,21 @@ export default function Dashboard() {
       console.log('=== END UPDATE ===\n');
     }
   }, [realtimeData]);
+
+  // ✅ NEW: Monitor cleanliness score dan trigger alert jika < 60%
+  useEffect(() => {
+    if (cleanlinessScore < 60 && !isSanitized) {
+      // Check jika alert sudah ditampilkan dalam 5 menit terakhir
+      const now = Date.now();
+      if (!cleaningAlert.dismissedTime || (now - cleaningAlert.dismissedTime > 5 * 60 * 1000)) {
+        setCleaningAlert({ show: true, dismissedTime: null });
+        console.log('🔴 [ALERT] Cleanliness score < 60%! Alert notifikasi ditampilkan.');
+      }
+    } else if (cleanlinessScore >= 80 && cleaningAlert.show) {
+      setCleaningAlert({ show: false, dismissedTime: Date.now() });
+      console.log('✅ [ALERT DISMISSED] Cleanliness score improved to >= 80%');
+    }
+  }, [cleanlinessScore, isSanitized]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -772,6 +788,48 @@ export default function Dashboard() {
         <div className="flex flex-col">
           <span style={{ fontFamily: 'Outfit, sans-serif' }} className="text-xs font-bold text-white tracking-wide">{toast.title}</span>
           <span className="text-[11px] text-slate-300">{toast.message}</span>
+        </div>
+      </div>
+
+      {/* ✅ CLEANING ALERT NOTIFICATION */}
+      <div className={`fixed top-8 right-8 z-50 transform transition-all duration-300 w-96 ${
+        cleaningAlert.show ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0 pointer-events-none'
+      }`}>
+        <div className="bg-gradient-to-r from-rose-500/95 to-red-500/95 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-[0_20px_40px_-8px_rgba(239,68,68,0.3)] border border-rose-400/30 flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-rose-400/30 text-rose-100 flex items-center justify-center shrink-0 mt-0.5">
+            <span className="material-symbols-outlined text-[24px]">priority_high</span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <span style={{ fontFamily: 'Outfit, sans-serif' }} className="font-bold text-sm tracking-wide">
+                ⚠️ KAMAR MANDI PERLU DIBERSIHKAN
+              </span>
+              <button
+                onClick={() => setCleaningAlert({ ...cleaningAlert, show: false, dismissedTime: Date.now() })}
+                className="text-rose-100 hover:text-white transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            <p className="text-xs text-rose-50 mb-3">
+              Indeks kebersihan telah turun di bawah 60%. Mohon segera lakukan pembersihan dan disinfeksi.
+            </p>
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-rose-600/40 border border-rose-300/40 rounded-lg">
+                <span className="material-symbols-outlined text-[16px]">cleaning</span>
+                <span>Kebersihan: {cleanlinessScore}%</span>
+              </div>
+              <button
+                onClick={() => {
+                  markSanitized();
+                  setCleaningAlert({ show: false, dismissedTime: Date.now() });
+                }}
+                className="ml-auto px-4 py-1.5 bg-white/20 hover:bg-white/30 border border-white/30 rounded-lg transition-all font-semibold"
+              >
+                Tandai Selesai
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </>
