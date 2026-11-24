@@ -16,35 +16,55 @@
 
 **Latency:** <1.5 detik (dari ESP32 → Dashboard)
 
-### 2. **Cleanliness Score**
+### 2. **Air Quality Card (MQ-135)**
+- ✅ Real-time PPM monitoring
+- ✅ Status: Aman/Hati-hati/Berbahaya
+- ✅ Sensor details & update rate
+- ✅ Visual indicator gauge
+
+### 3. **Activity Log Card**
+- ✅ Real-time event stream
+- ✅ Door open/close events
+- ✅ Sanitization records
+- ✅ Cleanliness changes tracked
+
+### 4. **Cleaning Alert Notification** ⚠️
+- ✅ **Auto-trigger** saat cleanliness < 60%
+- ✅ **Dismissible** alert banner (top-right)
+- ✅ **Quick action** button ("Tandai Selesai")
+- ✅ **Smart dismiss** (don't re-show untuk 5 menit)
+- ✅ **Red banner** dengan icon priority_high
+
+### 5. **Cleanliness Score**
 - ✅ Formula: 60% Gas (Ammonia) + 40% Humidity
 - ✅ Visual Gauge (Circular Progress)
 - ✅ Status: Sangat Bersih / Bersih / Perlu Dibersihkan
 - ✅ Auto-Calculate dari sensor data real-time
 
-### 3. **Foot Traffic Analytics**
+### 6. **Foot Traffic Analytics**
 - ✅ Bar Chart (10-jam history)
 - ✅ Peak Hour Detection
 - ✅ Total Visitor Count
 - ✅ Trend indicators
 
-### 4. **System Status**
+### 7. **System Status**
 - ✅ Node Online Status
 - ✅ Sampling Rate (5 detik)
 - ✅ WiFi Connection Status
 - ✅ 🟢 Breathing indicators (live status)
 
-### 5. **Clock & Auto-Sync**
+### 8. **Clock & Auto-Sync**
 - ✅ **Real-time Clock** (sinkron otomatis setiap detik)
 - ✅ Current Time display di header
 - ✅ Manual Sync button (manual refresh option)
 
-### 6. **UI/UX Polish**
+### 9. **UI/UX Polish**
 - ✅ Modern Glass Morphism Design
 - ✅ Responsive Grid Layout (5 columns sensor cards)
 - ✅ Smooth Animations & Transitions
 - ✅ Color-coded Status Indicators
 - ✅ Toast Notifications
+- ✅ Alert Notifications
 - ✅ Sidebar Navigation
 - ✅ Material Design Icons
 
@@ -260,34 +280,58 @@ Jadi semakin bersih udara, skor semakin tinggi"
     - Temperature, Humidity, Ammonia
     Semuanya update <2 detik"
 
-3. [Trigger door entry]
+3. [Point to Air Quality Card]
+   "Ini kartu Kualitas Udara yang menampilkan PPM ammonia real-time.
+    Sensor MQ-135 mendeteksi senyawa berbau & bisa jadi indikator 
+    kebersihan. Jika PPM tinggi, alert otomatis muncul."
+
+4. [Point to Activity Log]
+   "Activity Log mencatat setiap event: 
+    - Pintu terbuka/tertutup
+    - Jumlah pengunjung
+    - Perubahan kualitas udara
+    - Kapan terakhir dibersihkan"
+
+5. [Trigger door entry]
    "Sekarang saya masuk sensor pintu..."
    [Wait 1-2 seconds]
    "Lihat! Occupancy berubah TERISI, durasi mulai hitung"
 
-4. [Exit door]
+6. [Exit door]
    "Sekarang keluar..."
    [Wait 1-2 seconds]
    "Lihat! Status KOSONG, visitor count bertambah 1"
 
-5. [Show cleanliness score]
+7. [Show cleanliness score]
    "Cleanliness score dihitung dari:
     60% kualitas udara (ammonia)
     40% kelembaban optimal
-    Semakin bersih udara, semakin tinggi skor"
+    Jika skor turun di bawah 60%, sistem otomatis 
+    mengirim ALERT ke petugas."
 
-6. [Show foot traffic chart]
+8. [Simulate low cleanliness - reduce score manually]
+   "Misal score turun ke 55%... LIHAT! 
+    Alert notifikasi muncul di kanan atas!"
+   [Show red banner: "KAMAR MANDI PERLU DIBERSIHKAN"]
+   "Alert ini memberitahu petugas untuk segera melakukan pembersihan.
+    Tombol 'Tandai Selesai' bisa langsung diklik setelah dibersihkan."
+
+9. [Show foot traffic chart]
    "Chart ini menunjukkan pola pengunjung 10 jam terakhir.
     Puncak di jam 11-12. Rata-rata 14 orang/jam"
 
-7. [Point to live clock]
-   "Clock ini sinkron otomatis setiap detik.
-    Jaringan real-time Supabase handle semuanya"
+10. [Point to live clock]
+    "Clock ini sinkron otomatis setiap detik.
+     Jaringan real-time Supabase handle semuanya"
 
-8. [Close]
-   "Semua fitur presentasi-ready. 
-    Latency cepat, data akurat, UI polish.
-    Siap untuk produksi!"
+11. [Close]
+    "Sistem kami memberikan 3 layer pengawasan:
+     1. Real-time sensor data (temperatur, kelembaban, bau)
+     2. Activity log (riwayat lengkap)
+     3. Smart alert (otomatis notifikasi ke petugas)
+     
+     Ini membuat kamar mandi selalu terjaga kebersihannya.
+     Siap untuk produksi!"
 ```
 
 ---
