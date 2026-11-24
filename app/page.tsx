@@ -17,8 +17,18 @@ export default function Dashboard() {
 
   const [cleanlinessScore, setCleanlinessScore] = useState(88);
   const [isSanitized, setIsSanitized] = useState(false);
-  const [currentTime, setCurrentTime] = useState('10:48 WIB');
+  const [currentTime, setCurrentTime] = useState(() => 
+    new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
+  );
   const [toast, setToast] = useState({ show: false, title: '', message: '' });
+
+  // ✅ Auto-sync jam setiap detik
+  useEffect(() => {
+    const clockInterval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB');
+    }, 1000);
+    return () => clearInterval(clockInterval);
+  }, []);
 
   // Update from realtime data
   useEffect(() => {
