@@ -212,14 +212,6 @@ export default function Dashboard() {
                 <span className="material-symbols-outlined text-[20px] text-[#85f8c4]">dashboard</span>
                 <span style={{ fontFamily: 'Outfit, sans-serif' }} className="tracking-wide">Ringkasan Sistem</span>
               </a>
-              <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-[#4a5d54] hover:text-[#0F1F19] hover:bg-[#006948]/5 font-medium text-xs group">
-                <span className="material-symbols-outlined text-[20px] text-[#8a9e94] group-hover:text-[#006948]">history</span>
-                <span style={{ fontFamily: 'Outfit, sans-serif' }} className="tracking-wide">Riwayat & Tren</span>
-              </a>
-              <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-[#4a5d54] hover:text-[#0F1F19] hover:bg-[#006948]/5 font-medium text-xs group">
-                <span className="material-symbols-outlined text-[20px] text-[#8a9e94] group-hover:text-[#006948]">tune</span>
-                <span style={{ fontFamily: 'Outfit, sans-serif' }} className="tracking-wide">Pengaturan Node</span>
-              </a>
             </nav>
           </div>
 
