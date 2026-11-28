@@ -125,6 +125,9 @@ export default function Dashboard() {
   const [trafficHistory, setTrafficHistory] = useState<number[]>(Array(10).fill(0));
   const [lastVisitorCount, setLastVisitorCount] = useState(0);
   const [lastHourReset, setLastHourReset] = useState(new Date().getHours());
+  const [trafficFilter, setTrafficFilter] = useState<'today' | 'week' | 'month'>('today');
+  const [weeklyTraffic, setWeeklyTraffic] = useState<number[]>(Array(7).fill(0));
+  const [monthlyTraffic, setMonthlyTraffic] = useState<number[]>(Array(30).fill(0));
 
   // Update traffic history when visitor count CHANGES (new guest)
   useEffect(() => {
@@ -146,6 +149,27 @@ export default function Dashboard() {
       const currentHour = new Date().getHours();
       if (currentHour !== lastHourReset) {
         console.log('⏰ [Traffic] Hour changed from', lastHourReset, 'to', currentHour, '- shifting traffic history');
+        
+        // Store daily total (sum of all 10 hours)
+        const dailyTotal = trafficHistory.reduce((a, b) => a + b, 0);
+        
+        // Update weekly data
+        const now = new Date();
+        const dayOfWeek = (now.getDay() + 6) % 7; // Monday = 0
+        setWeeklyTraffic(prev => {
+          const updated = [...prev];
+          updated[dayOfWeek] = dailyTotal;
+          return updated;
+        });
+        
+        // Update monthly data
+        const dayOfMonth = now.getDate() - 1; // 0-indexed
+        setMonthlyTraffic(prev => {
+          const updated = [...prev];
+          updated[dayOfMonth] = dailyTotal;
+          return updated;
+        });
+        
         setTrafficHistory(prev => {
           const updated = [...prev.slice(1), 0]; // Shift left, add 0 at end for new hour
           return updated;
@@ -156,33 +180,61 @@ export default function Dashboard() {
     return () => clearInterval(checkHourChange);
   }, [lastHourReset]);
 
-  // ✅ Generate dynamic 10-hour time labels (current time - 9 hours) with correct timezone
+  // ✅ Generate dynamic labels based on traffic filter
   const getTrafficLabels = () => {
-    const labels = [];
-    const now = new Date();
-    
-    // Get local timezone offset in milliseconds
-    const offset = now.getTimezoneOffset() * 60 * 1000;
-    
-    for (let i = 9; i >= 0; i--) {
-      // Create time considering local timezone
-      const timeMs = now.getTime() - (i * 60 * 60 * 1000);
-      const time = new Date(timeMs);
-      
-      // Get hours in local timezone (not UTC)
-      const hour = String(time.getHours()).padStart(2, '0');
-      labels.push(hour + ':00');
+    if (trafficFilter === 'today') {
+      // 10 hours
+      const labels = [];
+      const now = new Date();
+      for (let i = 9; i >= 0; i--) {
+        const timeMs = now.getTime() - (i * 60 * 60 * 1000);
+        const time = new Date(timeMs);
+        const hour = String(time.getHours()).padStart(2, '0');
+        labels.push(hour + ':00');
+      }
+      return labels;
+    } else if (trafficFilter === 'week') {
+      // 7 days
+      const labels = [];
+      const now = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const dateMs = now.getTime() - (i * 24 * 60 * 60 * 1000);
+        const date = new Date(dateMs);
+        const dayName = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][date.getDay()];
+        const day = String(date.getDate()).padStart(2, '0');
+        labels.push(`${dayName} ${day}`);
+      }
+      return labels;
+    } else {
+      // 30 days
+      const labels = [];
+      const now = new Date();
+      for (let i = 29; i >= 0; i--) {
+        const dateMs = now.getTime() - (i * 24 * 60 * 60 * 1000);
+        const date = new Date(dateMs);
+        const day = String(date.getDate()).padStart(2, '0');
+        labels.push(day);
+      }
+      return labels;
     }
-    console.log('[Traffic] Labels:', labels, 'Current hour:', new Date().getHours());
-    return labels;
   };
 
-  const trafficData = {
-    labels: getTrafficLabels(),
-    counts: trafficHistory,
-    heights: trafficHistory.map(count => Math.max((count / Math.max(...trafficHistory, 1)) * 100, 5)),
-    peakIndex: trafficHistory.indexOf(Math.max(...trafficHistory, 0)),
-    currentIndex: 9  // ✅ Always latest (rightmost)
+  const getTrafficCounts = () => {
+    if (trafficFilter === 'today') return trafficHistory;
+    if (trafficFilter === 'week') return weeklyTraffic;
+    return monthlyTraffic;
+  };
+
+  const getTrafficData = () => {
+    const labels = getTrafficLabels();
+    const counts = getTrafficCounts();
+    return {
+      labels,
+      counts,
+      heights: counts.map(count => Math.max((count / Math.max(...counts, 1)) * 100, 5)),
+      peakIndex: counts.indexOf(Math.max(...counts, 0)),
+      currentIndex: counts.length - 1
+    };
   };
 
   const strokeDashoffset = 251.2 - (251.2 * cleanlinessScore) / 100;
@@ -472,13 +524,37 @@ export default function Dashboard() {
                   <p className="text-xs text-[#8a9e94]">Pola frekuensi pengguna terdeteksi oleh sensor pintu & inframerah</p>
                 </div>
                 <div className="flex p-1 bg-[#e2efe7]/70 rounded-2xl border border-[#132a22]/5">
-                  <button style={{ fontFamily: 'Outfit, sans-serif' }} className="px-4 py-1.5 rounded-xl font-bold text-xs bg-white text-[#132a22] shadow-sm">
+                  <button
+                    onClick={() => setTrafficFilter('today')}
+                    style={{ fontFamily: 'Outfit, sans-serif' }}
+                    className={`px-4 py-1.5 rounded-xl font-bold text-xs transition-all ${
+                      trafficFilter === 'today'
+                        ? 'bg-white text-[#132a22] shadow-sm'
+                        : 'text-[#4a5d54] hover:text-[#132a22]'
+                    }`}
+                  >
                     Hari Ini
                   </button>
-                  <button style={{ fontFamily: 'Outfit, sans-serif' }} className="px-4 py-1.5 rounded-xl text-xs text-[#4a5d54]">
+                  <button
+                    onClick={() => setTrafficFilter('week')}
+                    style={{ fontFamily: 'Outfit, sans-serif' }}
+                    className={`px-4 py-1.5 rounded-xl font-bold text-xs transition-all ${
+                      trafficFilter === 'week'
+                        ? 'bg-white text-[#132a22] shadow-sm'
+                        : 'text-[#4a5d54] hover:text-[#132a22]'
+                    }`}
+                  >
                     Minggu Ini
                   </button>
-                  <button style={{ fontFamily: 'Outfit, sans-serif' }} className="px-4 py-1.5 rounded-xl text-xs text-[#4a5d54]">
+                  <button
+                    onClick={() => setTrafficFilter('month')}
+                    style={{ fontFamily: 'Outfit, sans-serif' }}
+                    className={`px-4 py-1.5 rounded-xl font-bold text-xs transition-all ${
+                      trafficFilter === 'month'
+                        ? 'bg-white text-[#132a22] shadow-sm'
+                        : 'text-[#4a5d54] hover:text-[#132a22]'
+                    }`}
+                  >
                     Bulan Ini
                   </button>
                 </div>
@@ -490,34 +566,34 @@ export default function Dashboard() {
                     <span className="material-symbols-outlined text-[16px]">bolt</span>
                   </div>
                   <span>
-                    Periode Puncak: <strong className="font-bold text-[#92400E]">{trafficData.labels[trafficData.peakIndex]}</strong> ({trafficData.counts[trafficData.peakIndex]} Kunjungan)
+                    Periode Puncak: <strong className="font-bold text-[#92400E]">{getTrafficData().labels[getTrafficData().peakIndex]}</strong> ({getTrafficData().counts[getTrafficData().peakIndex]} Kunjungan)
                   </span>
                 </div>
                 <span className="text-[11px] font-semibold text-[#92400E] bg-white/80 px-3 py-0.5 rounded-full">
-                  Total: {trafficData.counts.reduce((a, b) => a + b, 0)} Tamu
+                  Total: {getTrafficData().counts.reduce((a, b) => a + b, 0)} Tamu
                 </span>
               </div>
 
               <div className="relative h-64 flex items-end justify-between gap-3 px-3">
-                {trafficData.labels.map((label, i) => (
+                {getTrafficData().labels.map((label, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
                     <div
                       className={`w-full max-w-[36px] rounded-2xl transition-all duration-500 relative ${
-                        i === trafficData.peakIndex
+                        i === getTrafficData().peakIndex
                           ? 'bg-gradient-to-t from-[#d97706] to-[#f59e0b] shadow-[0_8px_24px_-4px_rgba(217,119,6,0.25)] ring-2 ring-[#FDE68A]/60'
-                          : i === trafficData.currentIndex
+                          : i === getTrafficData().currentIndex
                           ? 'bg-gradient-to-t from-[#006948] to-[#00855d] shadow-[0_10px_28px_-4px_rgba(0,105,72,0.28)]'
                           : 'bg-[#132a22]/10 hover:bg-emerald-200/60'
                       }`}
-                      style={{ height: `${trafficData.heights[i]}%` }}
+                      style={{ height: `${getTrafficData().heights[i]}%` }}
                     >
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#0F1F19] text-white text-[11px] font-bold py-1 px-2.5 rounded-xl absolute -top-8 pointer-events-none shadow-md whitespace-nowrap">
-                        {trafficData.counts[i]} Orang
+                        {getTrafficData().counts[i]} Orang
                       </div>
                     </div>
                     <span className={`text-[11px] font-medium ${
-                      i === trafficData.peakIndex ? 'text-[#d97706] font-bold' :
-                      i === trafficData.currentIndex ? 'text-[#006948] font-bold' :
+                      i === getTrafficData().peakIndex ? 'text-[#d97706] font-bold' :
+                      i === getTrafficData().currentIndex ? 'text-[#006948] font-bold' :
                       'text-[#8a9e94]'
                     }`}>
                       {label}
