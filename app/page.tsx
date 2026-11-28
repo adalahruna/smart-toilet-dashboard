@@ -37,16 +37,19 @@ export default function Dashboard() {
       console.log('=== DASHBOARD UPDATE ===');
       console.log('Realtime data received:', realtimeData);
       
-      const newSensorData = {
-        occupied: realtimeData.occupied || false,
-        visitorCount: realtimeData.visitor_count || 0,
-        temperature: realtimeData.temperature || 25,
-        humidity: realtimeData.humidity || 60,
-        ammoniaPPM: realtimeData.ammonia_ppm || 0,
-        duration: 0,
-      };
-      console.log('New sensor data:', newSensorData);
-      setSensorData(newSensorData);
+      setSensorData(prev => {
+        const newSensorData = {
+          occupied: realtimeData.occupied || false,
+          visitorCount: realtimeData.visitor_count || 0,
+          temperature: realtimeData.temperature || 25,
+          humidity: realtimeData.humidity || 60,
+          ammoniaPPM: realtimeData.ammonia_ppm || 0,
+          // ✅ Reset duration only when occupied changes from true to false
+          duration: (prev.occupied && !realtimeData.occupied) ? 0 : prev.duration,
+        };
+        console.log('New sensor data:', newSensorData);
+        return newSensorData;
+      });
       
       // Calculate cleanliness score using formula: (gas 60% + humidity 40%)
       const ammoniaPPM = realtimeData.ammonia_ppm || 0;
@@ -97,12 +100,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (sensorData.occupied) {
-        setSensorData(prev => ({ ...prev, duration: prev.duration + 1 }));
-      }
+      setSensorData(prev => {
+        // Only increment if currently occupied
+        if (prev.occupied) {
+          return { ...prev, duration: prev.duration + 1 };
+        }
+        return prev;
+      });
     }, 1000);
     return () => clearInterval(interval);
-  }, [sensorData.occupied]);
+  }, []);  // ✅ Empty deps - interval runs continuously until unmount
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
