@@ -574,32 +574,34 @@ export default function Dashboard() {
                 </span>
               </div>
 
-              <div className="relative h-64 flex items-end justify-between gap-3 px-3">
-                {getTrafficData().labels.map((label, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                    <div
-                      className={`w-full max-w-[36px] rounded-2xl transition-all duration-500 relative ${
-                        i === getTrafficData().peakIndex
-                          ? 'bg-gradient-to-t from-[#d97706] to-[#f59e0b] shadow-[0_8px_24px_-4px_rgba(217,119,6,0.25)] ring-2 ring-[#FDE68A]/60'
-                          : i === getTrafficData().currentIndex
-                          ? 'bg-gradient-to-t from-[#006948] to-[#00855d] shadow-[0_10px_28px_-4px_rgba(0,105,72,0.28)]'
-                          : 'bg-[#132a22]/10 hover:bg-emerald-200/60'
-                      }`}
-                      style={{ height: `${getTrafficData().heights[i]}%` }}
-                    >
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#0F1F19] text-white text-[11px] font-bold py-1 px-2.5 rounded-xl absolute -top-8 pointer-events-none shadow-md whitespace-nowrap">
-                        {getTrafficData().counts[i]} Orang
+              <div className={`relative h-64 ${trafficFilter === 'month' ? 'overflow-x-auto pb-4' : 'flex'} items-end justify-between gap-3 px-3`}>
+                <div className={`flex items-end justify-between gap-3 ${trafficFilter === 'month' ? 'w-fit min-w-full' : 'w-full h-full'}`}>
+                  {getTrafficData().labels.map((label, i) => (
+                    <div key={i} className={`flex flex-col items-center gap-2 group h-full justify-end ${trafficFilter === 'month' ? 'w-12' : 'flex-1'}`}>
+                      <div
+                        className={`${trafficFilter === 'month' ? 'w-10' : 'w-full max-w-[36px]'} rounded-2xl transition-all duration-500 relative ${
+                          i === getTrafficData().peakIndex
+                            ? 'bg-gradient-to-t from-[#d97706] to-[#f59e0b] shadow-[0_8px_24px_-4px_rgba(217,119,6,0.25)] ring-2 ring-[#FDE68A]/60'
+                            : i === getTrafficData().currentIndex
+                            ? 'bg-gradient-to-t from-[#006948] to-[#00855d] shadow-[0_10px_28px_-4px_rgba(0,105,72,0.28)]'
+                            : 'bg-[#132a22]/10 hover:bg-emerald-200/60'
+                        }`}
+                        style={{ height: `${getTrafficData().heights[i]}%` }}
+                      >
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#0F1F19] text-white text-[11px] font-bold py-1 px-2.5 rounded-xl absolute -top-8 pointer-events-none shadow-md whitespace-nowrap">
+                          {getTrafficData().counts[i]} Orang
+                        </div>
                       </div>
+                      <span className={`text-[11px] font-medium ${
+                        i === getTrafficData().peakIndex ? 'text-[#d97706] font-bold' :
+                        i === getTrafficData().currentIndex ? 'text-[#006948] font-bold' :
+                        'text-[#8a9e94]'
+                      }`}>
+                        {label}
+                      </span>
                     </div>
-                    <span className={`text-[11px] font-medium ${
-                      i === getTrafficData().peakIndex ? 'text-[#d97706] font-bold' :
-                      i === getTrafficData().currentIndex ? 'text-[#006948] font-bold' :
-                      'text-[#8a9e94]'
-                    }`}>
-                      {label}
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               <div className="pt-4 border-t border-[#132a22]/5 flex items-center justify-between text-xs text-[#8a9e94] mt-4">
